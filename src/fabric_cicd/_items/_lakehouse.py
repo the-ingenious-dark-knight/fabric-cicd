@@ -154,6 +154,8 @@ def _publish_shortcuts(fabric_workspace_obj: FabricWorkspace, item_obj: Item, sh
 
 
 def _publish_shortcuts_bulk(fabric_workspace_obj: FabricWorkspace, item_obj: Item, shortcut_dict: dict) -> None:
+    logger.info(f"{constants.INDENT}Publishing shortcuts in bulk")
+
     create_shortcut_requests = list(shortcut_dict.values())
     request_body = {"createShortcutRequests": create_shortcut_requests}
 
