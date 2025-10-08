@@ -68,13 +68,13 @@ def publish_all_items(
             "Using item_name_exclude_regex is risky as it can prevent needed dependencies from being deployed.  Use at your own risk."
         )
         fabric_workspace_obj.publish_item_name_exclude_regex = item_name_exclude_regex
-        
+
     if items_to_include:
         logger.warning(
             "Using items_to_include is risky as it can prevent needed dependencies from being deployed.  Use at your own risk."
         )
         fabric_workspace_obj.items_to_include = items_to_include
-        
+
     try:
         if "VariableLibrary" in fabric_workspace_obj.item_type_in_scope:
             print_header("Publishing Variable Libraries")
