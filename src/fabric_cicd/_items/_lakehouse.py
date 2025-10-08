@@ -135,7 +135,7 @@ def process_shortcuts(fabric_workspace_obj: FabricWorkspace, item_obj: Item) -> 
     logger.info(f"{constants.INDENT}Published")
 
 
-def publish_shortcuts(fabric_workspace_obj: FabricWorkspace, item_obj: Item, shortcut_dict: dict) -> None:
+def _publish_shortcuts(fabric_workspace_obj: FabricWorkspace, item_obj: Item, shortcut_dict: dict) -> None:
     """
     Publishes all shortcuts defined in the list.
 
@@ -151,6 +151,48 @@ def publish_shortcuts(fabric_workspace_obj: FabricWorkspace, item_obj: Item, sho
             url=f"{fabric_workspace_obj.base_api_url}/items/{item_obj.guid}/shortcuts?shortcutConflictPolicy=CreateOrOverwrite",
             body=shortcut,
         )
+
+
+def _publish_shortcuts_bulk(fabric_workspace_obj: FabricWorkspace, item_obj: Item, shortcut_dict: dict) -> None:
+    create_shortcut_requests = list(shortcut_dict.values())
+    request_body = {"createShortcutRequests": create_shortcut_requests}
+
+    base_url = fabric_workspace_obj.base_api_url
+    bulk_url = f"{base_url}/items/{item_obj.guid}/shortcuts/bulkCreate?shortcutConflictPolicy=CreateOrOverwrite"
+    try:
+        fabric_workspace_obj.endpoint.invoke(
+            method="POST",
+            url=bulk_url,
+            body=request_body,  # type: ignore[arg-type]
+        )
+    except Exception as e:
+        logger.warning(
+            f"{constants.INDENT}Bulk shortcut publish failed, falling back to individual publish. Error: {e}"
+        )
+        _publish_shortcuts(fabric_workspace_obj, item_obj, shortcut_dict)
+
+
+def publish_shortcuts(fabric_workspace_obj: FabricWorkspace, item_obj: Item, shortcut_dict: dict) -> None:
+    """
+    Publishes all shortcuts defined in the list.
+
+    Args:
+        fabric_workspace_obj: The FabricWorkspace object containing the items to be published
+        item_obj: The item object to publish shortcuts for
+        shortcut_dict: The dict of shortcuts to publish
+    """
+    if not shortcut_dict:
+        logger.info(f"{constants.INDENT}No shortcuts to publish")
+        return
+
+    import os
+
+    is_bulk: bool = os.getenv("ENABLE_SHORTCUT_PUBLISH_BULK", "false").lower() == "true"
+
+    if is_bulk:
+        _publish_shortcuts_bulk(fabric_workspace_obj, item_obj, shortcut_dict)
+    else:
+        _publish_shortcuts(fabric_workspace_obj, item_obj, shortcut_dict)
 
 
 def unpublish_shortcuts(fabric_workspace_obj: FabricWorkspace, item_obj: Item, shortcut_paths: list) -> None:
